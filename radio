@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# bbc_streams.txt needs to be in same directory as script
+DIR=`cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd`
+STREAMS=$DIR"/radio_streams"
+# change SUBFOLDER if you already have a folder
+# with this name and have permissions problems.
+SUBDIR="radio_progs"
+PREFIX="radio_prog"
+# function to display what's playing now & next
+function nownext () { 
+  cd $DIR && mkdir -p $SUBDIR && cd $SUBDIR
+  URL="$(sed -n "/$1/I{n;n;p}" $STREAMS | head -n1)"
+  # get schedule file from bbc and split into individual programmes
+  wget -q $URL && csplit --silent --prefix=$PREFIX today.yaml /is_repeat/ {*} && rm today.yaml
+  STATION="$(sed -n "/$1/I{p}" $STREAMS | head -n1 | grep -o 'BBC.*')"
+  TIME="$(date +%s)" # time now in seconds since epoch
+  n=0
+  printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' = # horizonal line
+  for f in * 
+  do
+    ST=`grep ' start:' $f | sed -n 's/^.*\"\(.*\)\".*$/\1/p'` # get start time
+    START=`date +%R --date=$ST` # format start time for display
+    ST=`date +%s --date=$ST` # convert start time to seconds since epoch
+    ET=`grep ' end:' $f | sed -n 's/^.*\"\(.*\)\".*$/\1/p'` # get end time
+    END=`date +%R --date=$ET` # format for display
+    ET=`date +%s --date=$ET` # seconds
+    TITLE=`grep -A 2 ' display_titles:' $f | grep ' title:' | sed -n 's/^.*\"\(.*\)\".*$/\1/p'`
+    SUBTITLE=`grep -A 2 ' display_titles:' $f | grep ' subtitle:' | sed -n 's/^.*\"\(.*\)\".*$/\1/p'`
+    SYNOPSIS=`grep ' short_synopsis:' $f | sed -n 's/^.*\"\(.*\)\".*$/\1/p'`
+    # 'next' loop
+    if (( n>0 )); then
+      printf " \e[0m$START - $END\t\e[0;33m$TITLE\e[0m\n"
+      n=$n-1
+    fi
+    if (( $ST < $TIME && $TIME < $ET )); then # it is scheduled to be on now
+      printf " \e[0;34m$3 $STATION\n \e[0m$START - $END\t\e[0;33m$TITLE\n\t\t\e[0;32m- $SUBTITLE\e[0m\n $SYNOPSIS\n\n \e[0;34mNext\n"
+      if [ "$2" == "later" ]; then
+        n=100 # make 'next' loop through all of today's programmes
+      else
+        n=4 # only show 4 next on
+      fi
+    fi
+  done
+  printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' = # horizontal line
+  rm radio_prog* && cd $DIR # clean up
+}
+
+if [ "$1" = "stop" ]; then
+  cvlc vlc://quit &> /dev/null &
+  echo "Stopping radio"
+elif [ "$1" = "list" ]; then
+  if [ "$2" ]; then # if a search term is given look for that
+    LIST="$(grep BBC $STREAMS | grep -i $2)"
+  else # show all available stations
+    LIST="$(grep BBC $STREAMS)"
+  fi
+  echo "${LIST}"
+elif [ "$2" = "list" ]; then # radio list scot = radio scot list
+  LIST="$(grep BBC $STREAMS | grep -i $1)"
+  echo "${LIST}"
+elif [ "$2" = "now" ] || [ "$2" = "later" ] || [ "$2" = "next" ]; then
+  nownext $1 $2 "Now on"
+else
+  URL="$(sed -n "/$1/I{n;p}" $STREAMS | head -n1)"
+  STATION="$(sed -n "/$1/I{p}" $STREAMS | head -n1 | grep -o 'BBC.*')"
+  if [ "$STATION" = "" ]; then
+    echo "No station found."
+  else
+    # play the station!
+    cvlc vlc://quit &> /dev/null && sleep 0.1s && cvlc -q "${URL}" &> /dev/null &
+    nownext $1 "" "Playing"
+  fi
+fi
