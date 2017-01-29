@@ -12,7 +12,7 @@ Thanks to simoncn and clanger9 at the [Linn forums](http://forums.linn.co.uk/bb/
                     - John Cooper Clarke
     John Cooper Clarke sits in on the Sunday Service with two hours of classic nuggets.
     
-    ####  Next
+    Next
     * 18:00 - 20:00  Now Playing @6Music
     * 20:00 - 22:00  Stuart Maconie's Freak Zone
     * 22:00 - 00:00  Don Letts' Culture Clash Radio
@@ -30,39 +30,24 @@ put 'radio' and 'radio_streams' in the same folder, in your path. Make 'radio' e
 
 ## Usage
 ### list all available stations
-    radio list
+    $ radio list
 
 ### list stations matching [pattern]
-    radio list [pattern]
-eg
-
-    radio list s
+    $ radio list [pattern]    eg $ radio list scot
 
 or
 
-    radio [pattern] list
-eg
-
-    radio w list
+    $ radio [pattern] list    eg $ radio w list
 
 ### play station matching pattern
-    radio [pattern]
-eg
-
-    radio 4
+    $ radio [pattern]    eg $ radio 4
 
 ### stop playing
-    radio stop
+    $ radio stop
 *Will not work if VLC is not configured for single-instance mode*
 
 ### display now / next info
-    radio [pattern] now
-eg
-
-    radio 1x now
+    radio [pattern] now    eg $ radio 1x now
 
 ### display the remainder of today's schedule
-    radio [pattern] later
-eg
-
-    radio R5X later
+    radio [pattern] later    eg $ radio R5X later
