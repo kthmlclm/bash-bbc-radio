@@ -1,3 +1,5 @@
+**Doesn't work anymore**
+
 # Bash BBC Radio
 
 A bash script to play high quality BBC streams from the command line, via VLCs cvlc command.
